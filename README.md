@@ -2,6 +2,8 @@
 
 Convert PDF books into Skills callable to Claude Code.
 
+Please see recent updates: https://github.com/kitchen-engineer42/Anything2Workspace
+
 ## Quick Start
 
 ### 1. Install Dependencies
