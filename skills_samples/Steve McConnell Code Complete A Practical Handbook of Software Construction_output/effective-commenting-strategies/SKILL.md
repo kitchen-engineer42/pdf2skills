@@ -1,137 +1,84 @@
 ---
 name: effective-commenting-strategies
-description: Use this skill when writing, reviewing, or maintaining code comments. Apply these strategies to ensure comments explain intent rather than repeat code, use maintainable styles, and follow density guidelines. This skill covers comment types, style best practices, and performance considerations.
+description: "Write and review code comments that explain intent, not mechanics. Use when adding comments to new code, reviewing existing comments for staleness or redundancy, establishing team commenting conventions, or converting vague inline comments into intent-based explanations."
 ---
 
 # Effective Commenting Strategies
 
-Good comments explain the "why" behind code, not the "what." Use these strategies to write comments that enhance code maintainability without creating maintenance burden.
+Write comments that explain *why* code exists, not *what* it does. Apply these strategies when writing new comments or reviewing existing ones.
 
 ## When to Use
 
-- Adding comments to new code
-- Reviewing existing comments for quality
-- Establishing team commenting standards
-- Optimizing comment density for readability
-- Handling performance-sensitive code with comments
+- Adding comments to new or modified code
+- Reviewing pull requests for comment quality
+- Refactoring code with stale, misleading, or redundant comments
+- Setting team commenting standards
 
-## Core Principle: Intent Over Repetition
+## Decision Workflow
 
-Good comments should:
-- **Not repeat code** or explain what the code does
-- **Clarify intent** at a higher abstraction level than the code
-- **Act as navigation** like book headings or table of contents
-- **Help maintenance** by explaining the original programmer's intent
-- **Be efficient"—reading one English comment is faster than parsing 20 lines of code
+When encountering code that may need a comment:
 
-**Rule**: If the code already explains everything, a comment that repeats it provides no value.
+1. **Is the code self-explanatory?** → No comment needed
+2. **Can you make the code clearer instead?** → Refactor first, then reassess
+3. **Is there non-obvious intent?** → Write an intent comment
+4. **Is there a complex block (5+ lines)?** → Write a summary comment
+5. **Is there incomplete work?** → Add a `TODO`/`FIXME` marker
 
-## Comment Types
+## Comment Types with Examples
 
-### Marker Comments
+### Intent Comments (Preferred)
 
-**Purpose**: Remind developers of incomplete work (not intended for production)
+Explain *why* the code exists at the problem level:
 
-**Requirements**:
-- Use standardized markers (e.g., `***`, `TBD`, `TODO`)
-- Make markers mechanically searchable
-- Include in release checklist to prevent shipping known defects
+```python
+# BAD: repeats the code
+# Set retry count to 3
+retry_count = 3
 
-**Action**: Search for all markers before release to ensure no incomplete code ships.
-
-### Explanatory Comments
-
-**Purpose**: Explain complex, tricky, or sensitive code
-
-**Strategy**:
-- If code is complex enough to need explanation, **refactor the code** first
-- Make the code itself clearer
-- Then use summary or intent comments if still needed
+# GOOD: explains the why
+# Three retries handles transient network failures without overwhelming the server
+retry_count = 3
+```
 
 ### Summary Comments
 
-**Purpose**: Condense several lines of code into one or two sentences
+Condense multi-line blocks into scannable descriptions:
 
-**Value**: More valuable than code-repeating comments because readers can scan them faster than reading code
+```python
+# BAD: no comment on a dense block
+tokens = text.split()
+tokens = [t.lower() for t in tokens]
+tokens = [t for t in tokens if t not in stopwords]
+freq = Counter(tokens)
 
-**When to use**: Particularly helpful when non-original authors need to modify code
+# GOOD: summary at the top
+# Tokenize, normalize, and count word frequencies (excluding stopwords)
+tokens = text.split()
+tokens = [t.lower() for t in tokens]
+tokens = [t for t in tokens if t not in stopwords]
+freq = Counter(tokens)
+```
 
-### Intent Comments
+### Marker Comments
 
-**Purpose**: Explain the purpose of a code section at the intent/problem level
+Flag incomplete work with searchable tags:
 
-**Level**: Operates more at the problem level than the solution level
+```python
+# TODO(author): Handle pagination once API v2 ships
+# FIXME: Race condition when concurrent requests update the same record
+# HACK: Workaround for upstream bug #1234 — remove after library v3.0
+```
 
-**Example**:
-- Intent: "Get current employee information"
-- Solution/Summary: "Update employeeRecord object"
+**Rule:** Search for all `TODO`/`FIXME`/`HACK` markers before each release.
 
-### Metadata Comments
+## Style Rules
 
-**Purpose**: Record information that cannot be expressed in code
+| Rule | Reason |
+|------|--------|
+| Use `//` for single-line, `/* */` for multi-line | Consistency; multi-line `//` is harder to maintain |
+| Avoid decorative boxes (`***`, `+---+`) | Tedious to maintain when text changes |
+| Prefer accuracy over aesthetics | A correct one-line comment beats a pretty stale one |
 
-**Includes**:
-- Copyright notices
-- Confidentiality statements
-- Version numbers
-- Design notes
-- Requirement references
-- Online reference pointers
-- Optimization notes
-- Tool-required comments (e.g., Javadoc)
+## Density Guideline
 
-## Maintainable Comment Style
-
-### Avoid High-Maintenance Styles
-
-Do not use styles that require manual alignment:
-
-- ❌ **Leader dots** (`...`) connecting variables and descriptions
-- ❌ **Asterisk boxes** (`*`) surrounding paragraphs—requires adjusting both sides
-- ❌ **Plus-sign underlines** (`+---+`)—requires precise positioning when text length changes
-
-**Principle**: Prefer accurate comments over pretty comments. If maintaining aesthetics requires tedious work, abandon that style.
-
-### Syntax Guidelines
-
-**For Java and C++**:
-- **Single-line comments**: Use `//` syntax, keep comments short
-- **Multi-line comments**: Use `/* ... */` syntax—easier to maintain than manually wrapped `//` lines
-
-**For emphasis**: Use standard-length lines (via editor macros), not lines that vary with comment length
-
-## Comment Density Guidelines
-
-### Optimal Density
-
-**IBM Research Finding**: Approximately **1 comment per 10 statements** maximizes code clarity
-
-- **Below this density**: Code becomes difficult to understand
-- **Above this density**: Readability decreases
-
-### Avoid Quotas
-
-**Do not** enforce rigid standards like "at least 1 comment per 5 lines"
-
-**Reason**: This addresses the symptom (lack of comments) without solving the root cause (unclear code)
-
-### Performance Considerations
-
-**Principle**: Do not avoid comments due to performance concerns (e.g., interpreted environments, network transmission overhead)
-
-**Solution**: Create a separate release build
-
-**Implementation**: Run a tool during the build process to automatically strip comments from the production version
-
-## Pseudocode Programming Process (PPP) Comment Efficiency
-
-When using the Pseudocode Programming Process:
-
-1. **Recognize the pattern**: Effective PPP naturally results in "a comment every few lines"
-2. **Understand the nature**: Comment quantity is a side effect of the process, not a goal
-3. **Focus on efficiency**: Don't count comments—evaluate whether each comment is effective
-4. **Assess sufficiency**: Comments are sufficient if they:
-   - Describe **why** the code was written
-   - Meet the other standards in this skill
-
-**Conclusion**: If comments explain "why" and meet quality standards, the quantity is adequate—don't worry about the number.
+Target roughly **1 comment per 10 statements** (IBM research finding). Do not enforce rigid quotas — focus on whether each comment adds value the code alone does not convey.
