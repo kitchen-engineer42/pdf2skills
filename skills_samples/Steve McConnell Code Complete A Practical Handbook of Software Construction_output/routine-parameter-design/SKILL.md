@@ -1,89 +1,99 @@
 ---
 name: routine-parameter-design
-description: Design and optimize function/method parameter lists when defining or refactoring API interfaces, method signatures, or function parameters. Apply best practices for parameter count, ordering, pass mechanisms, and documentation to create clear, efficient, and maintainable interfaces.
+description: "Refactor and design function/method parameter lists for clarity and maintainability. Use when the user has too many arguments, needs to choose between positional and keyword parameters, wants to consolidate parameters into objects, or is designing new API method signatures."
 ---
 
 # Routine Parameter Design
 
-Use this skill when defining new functions, refactoring existing method signatures, or designing API interfaces to ensure proper parameter design.
+Apply structured parameter design when defining new functions or refactoring existing method signatures to reduce complexity, improve readability, and enforce clear interfaces.
 
 ## When to Use
 
-- Defining or refactoring a function's parameter list
-- Designing API interfaces or method signatures
-- Reviewing code for parameter-related issues
-- Optimizing function interfaces for clarity and maintainability
+- Function has more than 3-5 parameters
+- User asks about argument ordering or naming
+- Designing a new public API or library interface
+- Refactoring a method with confusing or inconsistent parameters
 
-## Core Design Principles
+## Workflow
 
-### 1. Limit Parameter Count
+### 1. Analyze Current Signature
 
-- Minimize the number of parameters to improve readability and usability
-- Consider using parameter objects or structs when parameters exceed 3-5 items
-- Each parameter should serve a distinct, necessary purpose
+Identify issues in the existing parameter list:
 
-### 2. Order Parameters (Input-Modify-Output)
+```python
+# BEFORE: Too many parameters, unclear ordering, mixed concerns
+def create_report(title, start_date, end_date, format, include_charts,
+                  chart_color, output_path, compress, email_to, verbose):
+    ...
+```
 
-Arrange parameters in this specific sequence:
+**Red flags:**
+- More than 5 parameters
+- Boolean flags that change behavior (`include_charts`, `compress`, `verbose`)
+- Related parameters that belong together (`start_date`/`end_date`, `chart_color`/`include_charts`)
 
-1. **Input parameters**: Data the routine reads but does not modify
-2. **Modify parameters**: Data the routine both reads and modifies
-3. **Output parameters**: Data the routine writes but does not read
+### 2. Apply the Input-Modify-Output Order
 
-### 3. Choose Appropriate Pass Mechanisms
+Arrange parameters in this sequence:
 
-- **Pass by value**: For primitive types and small objects that won't be modified
-- **Pass by reference**: For objects that need modification or to avoid copying overhead
-- **Objects**: Typically passed as object references (not individual fields)
-- **Pointers**: Follow the asterisk rule (use `*` consistently for pointer parameters)
+1. **Input** — data the function reads but does not change
+2. **Modify** — data the function reads and updates in place
+3. **Output** — data the function writes but does not read
 
-### 4. Ensure Interface Consistency
+```java
+// BEFORE: random ordering
+void processData(List<Result> output, Config config, List<Item> input, Logger log)
 
-- Match actual parameters with formal parameter types
-- Follow language-specific conventions (e.g., C library ordering when applicable)
-- Maintain consistent ordering across related functions
-- Use similar parameter names for similar purposes across the codebase
+// AFTER: input → modify → output
+void processData(List<Item> input, Config config, Logger log, List<Result> output)
+```
 
-### 5. Apply Modifiers Appropriately
+### 3. Consolidate into Parameter Objects
 
-- Use `const` prefix to prevent modification of input parameters
-- Use `in` keyword to explicitly mark input-only parameters
-- Use `out` keyword to explicitly mark output-only parameters
-- Consider `inout` or equivalent for parameters that are both read and modified
+Group related parameters into a single object:
 
-### 6. Document and Name Clearly
+```python
+# AFTER: Related parameters grouped into objects
+@dataclass
+class DateRange:
+    start: date
+    end: date
 
-- Use descriptive, self-documenting parameter names
-- Write clear comments explaining parameter purpose and constraints
-- Document expected ranges, valid values, and edge cases
-- Include units of measurement when applicable
+@dataclass
+class ChartOptions:
+    include: bool = False
+    color: str = "blue"
 
-### 7. Validate Parameter Usage
+@dataclass
+class OutputOptions:
+    path: str = "./report"
+    format: str = "pdf"
+    compress: bool = False
 
-- Ensure the routine uses all passed parameters
-- Remove unused parameters to avoid confusion
-- If a parameter is temporarily unused, document why and when it will be used
+def create_report(title: str, date_range: DateRange,
+                  charts: ChartOptions = ChartOptions(),
+                  output: OutputOptions = OutputOptions()):
+    ...
+```
 
-### 8. Avoid Global Variables
+### 4. Apply Modifiers and Defaults
 
-- Never use global variables as substitutes for parameters
-- Pass all required data explicitly through the parameter list
-- Global variables make code harder to test, understand, and maintain
+```typescript
+// Use readonly/const for input-only parameters
+function calculateTotal(readonly items: Item[], taxRate: number = 0.0): number
 
-## Language-Specific Considerations
+// Use sensible defaults to reduce required arguments
+function connect(host: string, port: number = 5432, timeout: number = 30): Connection
+```
 
-- **C/C++**: Pay attention to pointer vs reference semantics, const correctness
-- **Java**: All objects are passed by reference; primitives by value
-- **Visual Basic**: Use `ByVal` and `ByRef` keywords explicitly
-- Always check language-specific syntax limitations and conventions
+### 5. Validate the Result
 
-## Review Checklist
+**Checklist:**
 
-- [ ] Parameter count is minimized and reasonable
-- [ ] Parameters follow input-modify-output ordering
-- [ ] Pass mechanism is appropriate for each parameter
-- [ ] Modifiers (const, in, out) are used correctly
-- [ ] All parameters have clear names and documentation
-- [ ] All parameters are actually used by the routine
-- [ ] No global variables are used as parameter substitutes
-- [ ] Interface is consistent with related functions
+- [ ] Parameter count is 5 or fewer (or uses a parameter object)
+- [ ] Parameters follow input → modify → output ordering
+- [ ] Related parameters are grouped into objects
+- [ ] Boolean flags are replaced with enums or option objects where possible
+- [ ] All parameters are actually used in the function body
+- [ ] Defaults are provided for optional parameters
+- [ ] Names are descriptive and consistent with similar functions in the codebase
